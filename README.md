@@ -5,8 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Календарь смен – несколько проектов</title>
-    <!-- FullCalendar CSS -->
+    <title>Календарь смен — с Supabase</title>
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <style>
         body {
@@ -22,7 +21,6 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        /* Панель управления проектами */
         .project-bar {
             max-width: 1100px;
             margin: 0 auto 15px;
@@ -56,7 +54,6 @@
         .project-bar button:hover {
             opacity: 0.9;
         }
-        /* Модальное окно */
         .modal {
             display: none;
             position: fixed;
@@ -110,19 +107,26 @@
             background-color: #ccc;
             color: #333;
         }
+         .loader {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #555;
+        }
     </style>
+    <!-- Подключаем Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Панель проектов -->
     <div class="project-bar">
-        <select id="projectSelect"></select>
-        <button id="newProjectBtn">➕ Новый проект</button>
-        <button id="deleteProjectBtn" class="delete">🗑️ Удалить</button>
+        <select id="projectSelect" disabled>
+            <option>Загрузка проектов...</option>
+        </select>
+        <button id="newProjectBtn" disabled>➕ Новый проект</button>
+        <button id="deleteProjectBtn" class="delete" disabled>🗑️ Удалить</button>
     </div>
-
     <div id="calendar"></div>
 
-    <!-- Модальное окно для добавления смены -->
     <div id="shiftModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">Добавить смену</h3>
@@ -151,101 +155,36 @@
         </div>
     </div>
 
-    <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script>
-        // ---------- Глобальные переменные ----------
-        let calendar;
-        let projects = [];              // массив проектов: [{ id, name, shifts }]
-        let activeProjectId = null;      // id текущего проекта
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // 1. СЮДА ВСТАВЬТЕ ВАШИ ДАННЫЕ ИЗ SUPABASE
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        const SUPABASE_URL = 'https://ioybvjutdfbwcyzkmvsm.supabase.co/rest/v1/';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlveWJ2anV0ZGZid2N5emttdnNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNDk2NjYsImV4cCI6MjA5MjYyNTY2Nn0.MolULwweiDe-7REXZgA-0KAHmv9bjIWhRPQgsfxx5Ls'; // 
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        // Элементы управления проектами
+        // Инициализация клиента Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Глобальные переменные
+        let calendar;
+        let projects = [];      // массив проектов из БД
+        let activeProjectId = null;
+
+        // Элементы DOM
         const projectSelect = document.getElementById('projectSelect');
         const newProjectBtn = document.getElementById('newProjectBtn');
         const deleteProjectBtn = document.getElementById('deleteProjectBtn');
-
-        // Элементы модального окна
         const modal = document.getElementById('shiftModal');
         const employeeSelect = document.getElementById('employeeSelect');
         const startTimeInput = document.getElementById('startTime');
         const endTimeInput = document.getElementById('endTime');
         const modalTitle = document.getElementById('modalTitle');
 
-        // Переменные для выделенного интервала
-        let selectedStart = null;
-        let selectedEnd = null;
+        let selectedStart = null, selectedEnd = null;
 
-        // ---------- Загрузка и сохранение в localStorage ----------
-        const STORAGE_KEY = 'shiftCalendarProjects';
-
-        function loadProjects() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    projects = JSON.parse(saved);
-                    // Убедимся, что у каждого проекта есть поле shifts (массив)
-                    projects = projects.filter(p => p && p.id && p.name && Array.isArray(p.shifts));
-                } catch (e) {
-                    console.warn('Ошибка загрузки, создаём проект по умолчанию');
-                    projects = [];
-                }
-            }
-            // Если проектов нет, создаём демонстрационный
-            if (projects.length === 0) {
-                createDefaultProject();
-            }
-            // Устанавливаем активный проект (первый, если не задан)
-            if (!activeProjectId || !projects.find(p => p.id === activeProjectId)) {
-                activeProjectId = projects[0].id;
-            }
-        }
-
-        function saveProjects() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-        }
-
-        // Создание проекта по умолчанию с тестовыми сменами
-        function createDefaultProject() {
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(now.getDate() + 1);
-            tomorrow.setHours(9, 0, 0);
-            const tomorrowEnd = new Date(tomorrow);
-            tomorrowEnd.setHours(17, 0, 0);
-
-            const dayAfter = new Date(now);
-            dayAfter.setDate(now.getDate() + 2);
-            dayAfter.setHours(14, 0, 0);
-            const dayAfterEnd = new Date(dayAfter);
-            dayAfterEnd.setHours(22, 0, 0);
-
-            const demoShifts = [
-                {
-                    id: 'demo1',
-                    title: 'Иван Петров',
-                    start: tomorrow.toISOString(),
-                    end: tomorrowEnd.toISOString(),
-                    backgroundColor: getRandomColor('Иван Петров'),
-                    employee: 'Иван Петров'
-                },
-                {
-                    id: 'demo2',
-                    title: 'Мария Смирнова',
-                    start: dayAfter.toISOString(),
-                    end: dayAfterEnd.toISOString(),
-                    backgroundColor: getRandomColor('Мария Смирнова'),
-                    employee: 'Мария Смирнова'
-                }
-            ];
-
-            projects.push({
-                id: 'proj_' + Date.now(),
-                name: 'Основной проект',
-                shifts: demoShifts
-            });
-        }
-
-        // Генерация цвета на основе имени
+        // --- Вспомогательные функции ---
         function getRandomColor(name) {
             let hash = 0;
             for (let i = 0; i < name.length; i++) {
@@ -255,8 +194,101 @@
             return `hsl(${hue}, 70%, 85%)`;
         }
 
-        // ---------- Работа с проектами (выпадающий список) ----------
-        function renderProjectSelect() {
+        // --- Функции загрузки/сохранения в Supabase ---
+        async function loadProjectsFromSupabase() {
+            let { data, error } = await supabase
+                .from('projects')
+                .select('*');
+            
+            if (error) {
+                console.error('Ошибка загрузки проектов:', error);
+                alert('Не удалось загрузить данные из Supabase. Проверьте настройки.');
+                return;
+            }
+
+            if (data && data.length > 0) {
+                projects = data;
+            } else {
+                // Если в базе пусто, создадим проект по умолчанию
+                console.log("База данных пуста, создаю проект по умолчанию...");
+                await createDefaultProject();
+                // После создания по умолчанию, перезагружаем страницу, чтобы отобразить новый проект
+                // Но можно просто вызвать loadProjectsFromSupabase() ещё раз,
+                // но здесь для простоты предложим пользователю обновить страницу или делаем рекурсию.
+                // Мы просто создадим проект, а loadProjectsFromSupabase() вызовется в конце init.
+            }
+            // Обновляем интерфейс
+            if (projects.length > 0 && !activeProjectId) {
+                activeProjectId = projects[0].id;
+            }
+            renderUI();
+        }
+
+        async function createDefaultProject() {
+            const defaultProject = {
+                id: 'proj_default_' + Date.now(),
+                name: 'Основной проект',
+                shifts: [] // Начнём с пустым проектом, без демо-смен
+            };
+            let { error } = await supabase
+                .from('projects')
+                .insert([defaultProject]);
+            
+            if (error) {
+                console.error('Ошибка создания проекта по умолчанию:', error);
+                alert('Не удалось создать проект по умолчанию.');
+            } else {
+                projects.push(defaultProject);
+                activeProjectId = defaultProject.id;
+                renderUI();
+            }
+        }
+
+        async function syncProjectsToSupabase() {
+            // Этот метод принимает текущий массив projects и сохраняет его в Supabase.
+            // Так как используется политика "Enable all", проще всего удалить старые и вставить новые.
+            let { error: deleteError } = await supabase
+                .from('projects')
+                .delete()
+                .neq('id', 'non-existent-id'); // Удаляем всё
+            if (deleteError) {
+                console.error('Ошибка синхронизации (удаление):', deleteError);
+                alert('Ошибка сохранения данных (удаление)');
+                return;
+            }
+            let { error: insertError } = await supabase
+                .from('projects')
+                .insert(projects);
+            if (insertError) {
+                console.error('Ошибка синхронизации (вставка):', insertError);
+                alert('Ошибка сохранения данных (вставка)');
+                return;
+            }
+            console.log('Данные успешно синхронизированы с Supabase');
+        }
+
+        async function updateProjectInSupabase(project) {
+            // Upsert: если проект с таким id существует, обновит его, иначе создаст.
+            let { error } = await supabase
+                .from('projects')
+                .upsert(project, { onConflict: 'id' });
+            if (error) {
+                console.error('Ошибка обновления проекта в Supabase:', error);
+                alert('Не удалось сохранить изменения проекта.');
+            }
+        }
+
+        // --- Функции для работы с проектами ---
+        function renderUI() {
+            if (!projects.length) {
+                projectSelect.innerHTML = '<option>Нет проектов, создайте новый</option>';
+                projectSelect.disabled = true;
+                newProjectBtn.disabled = false;
+                deleteProjectBtn.disabled = true;
+                calendar.removeAllEvents();
+                return;
+            }
+            // Заполняем select
             projectSelect.innerHTML = '';
             projects.forEach(p => {
                 const option = document.createElement('option');
@@ -265,56 +297,70 @@
                 if (p.id === activeProjectId) option.selected = true;
                 projectSelect.appendChild(option);
             });
+            projectSelect.disabled = false;
+            newProjectBtn.disabled = false;
+            deleteProjectBtn.disabled = false;
+
+            // Показываем смены активного проекта
+            const activeProject = projects.find(p => p.id === activeProjectId);
+            if (activeProject) {
+                calendar.removeAllEvents();
+                calendar.addEventSource(activeProject.shifts || []);
+            } else {
+                calendar.removeAllEvents();
+            }
         }
 
-        // Переключение активного проекта
-        function switchProject(projectId) {
-            if (!projectId) return;
-            const project = projects.find(p => p.id === projectId);
-            if (!project) return;
-            activeProjectId = projectId;
-            // Обновляем календарь событиями этого проекта
-            calendar.removeAllEvents();
-            calendar.addEventSource(project.shifts);
-            renderProjectSelect();
-        }
-
-        // Создать новый проект
-        function createNewProject() {
+        async function createNewProject() {
             const name = prompt('Введите название нового проекта:', 'Новый проект');
             if (!name) return;
             const newId = 'proj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-            projects.push({
+            const newProject = {
                 id: newId,
                 name: name,
                 shifts: []
-            });
-            saveProjects();
+            };
+            projects.push(newProject);
             activeProjectId = newId;
-            switchProject(newId);
+            renderUI();
+            await updateProjectInSupabase(newProject);
         }
 
-        // Удалить текущий проект
-        function deleteCurrentProject() {
+        async function deleteCurrentProject() {
             if (projects.length <= 1) {
                 alert('Нельзя удалить единственный проект. Создайте новый перед удалением.');
                 return;
             }
-            if (!confirm(`Удалить проект "${projects.find(p => p.id === activeProjectId)?.name}"? Все смены будут потеряны.`)) return;
+            const projectName = projects.find(p => p.id === activeProjectId)?.name;
+            if (!confirm(`Удалить проект "${projectName}"? Все смены будут потеряны.`)) return;
             const index = projects.findIndex(p => p.id === activeProjectId);
             if (index !== -1) {
+                const deletedProject = projects[index];
                 projects.splice(index, 1);
-                activeProjectId = projects[0].id; // переключаемся на первый оставшийся
-                saveProjects();
-                switchProject(activeProjectId);
+                activeProjectId = projects[0].id;
+                renderUI();
+                let { error } = await supabase
+                    .from('projects')
+                    .delete()
+                    .eq('id', deletedProject.id);
+                if (error) {
+                    console.error('Ошибка удаления проекта из Supabase:', error);
+                    alert('Не удалось удалить проект на сервере.');
+                }
             }
         }
 
-        // ---------- Модальное окно ----------
+        function switchProject(projectId) {
+            if (!projectId) return;
+            if (!projects.find(p => p.id === projectId)) return;
+            activeProjectId = projectId;
+            renderUI();
+        }
+
+        // --- Операции со сменами ---
         function openModal(start, end) {
             selectedStart = start;
             selectedEnd = end;
-
             const formatDateForInput = (date) => {
                 const d = new Date(date);
                 const year = d.getFullYear();
@@ -324,10 +370,8 @@
                 const minutes = String(d.getMinutes()).padStart(2, '0');
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             };
-
             startTimeInput.value = formatDateForInput(start);
             endTimeInput.value = formatDateForInput(end);
-
             modalTitle.innerText = 'Добавить смену';
             modal.style.display = 'flex';
         }
@@ -336,8 +380,7 @@
             modal.style.display = 'none';
         };
 
-        // Сохранить смену (добавляет в текущий проект)
-        window.saveShift = function() {
+        async function saveShift() {
             const employee = employeeSelect.value;
             const start = startTimeInput.value;
             const end = endTimeInput.value;
@@ -346,14 +389,13 @@
                 alert('Заполните все поля');
                 return;
             }
-
             if (new Date(start) >= new Date(end)) {
                 alert('Время начала должно быть раньше времени окончания');
                 return;
             }
 
-            const project = projects.find(p => p.id === activeProjectId);
-            if (!project) return;
+            const projectIndex = projects.findIndex(p => p.id === activeProjectId);
+            if (projectIndex === -1) return;
 
             const newEvent = {
                 id: String(Date.now()) + '_' + Math.random().toString(36).substr(2, 5),
@@ -365,34 +407,26 @@
                 textColor: '#000',
                 employee: employee
             };
-
-            project.shifts.push(newEvent);
-            saveProjects();
-
-            // Обновляем календарь
-            calendar.addEvent(newEvent);
+            projects[projectIndex].shifts.push(newEvent);
+            renderUI();
+            await updateProjectInSupabase(projects[projectIndex]);
             closeModal();
-        };
+        }
 
-        // Удалить смену (из текущего проекта)
-        window.deleteShift = function(eventId) {
+        window.deleteShift = async function(eventId) {
             if (!confirm('Удалить эту смену?')) return;
-            const project = projects.find(p => p.id === activeProjectId);
-            if (!project) return;
-            const index = project.shifts.findIndex(s => s.id === eventId);
-            if (index !== -1) {
-                project.shifts.splice(index, 1);
-                saveProjects();
-                // Удаляем событие из календаря
-                const event = calendar.getEventById(eventId);
-                if (event) event.remove();
-            }
+            const projectIndex = projects.findIndex(p => p.id === activeProjectId);
+            if (projectIndex === -1) return;
+            const initialLength = projects[projectIndex].shifts.length;
+            projects[projectIndex].shifts = projects[projectIndex].shifts.filter(s => s.id !== eventId);
+            if (projects[projectIndex].shifts.length === initialLength) return;
+            renderUI();
+            await updateProjectInSupabase(projects[projectIndex]);
         };
 
-        // ---------- Инициализация календаря ----------
-        document.addEventListener('DOMContentLoaded', function() {
+        // --- Инициализация календаря и загрузка данных из Supabase ---
+        document.addEventListener('DOMContentLoaded', async function() {
             const calendarEl = document.getElementById('calendar');
-
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
                 headerToolbar: {
@@ -413,28 +447,15 @@
                     deleteShift(info.event.id);
                 }
             });
-
             calendar.render();
 
-            // Загружаем проекты из localStorage
-            loadProjects();
+            // Загружаем данные из Supabase
+            await loadProjectsFromSupabase();
 
-            // Заполняем выпадающий список и показываем активный проект
-            renderProjectSelect();
-            switchProject(activeProjectId);
-
-            // Обработчики кнопок проектов
-            newProjectBtn.addEventListener('click', () => {
-                createNewProject();
-            });
-
-            deleteProjectBtn.addEventListener('click', () => {
-                deleteCurrentProject();
-            });
-
-            projectSelect.addEventListener('change', (e) => {
-                switchProject(e.target.value);
-            });
+            // Обработчики кнопок
+            newProjectBtn.addEventListener('click', createNewProject);
+            deleteProjectBtn.addEventListener('click', deleteCurrentProject);
+            projectSelect.addEventListener('change', (e) => switchProject(e.target.value));
         });
     </script>
 </body>
