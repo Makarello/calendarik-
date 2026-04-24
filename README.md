@@ -160,7 +160,7 @@
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // 1. СЮДА ВСТАВЬТЕ ВАШИ ДАННЫЕ ИЗ SUPABASE
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        const SUPABASE_URL = 'https://ioybvjutdfbwcyzkmvsm.supabase.co/rest/v1/';
+        const SUPABASE_URL = 'sb_publishable_QraoGOwTBh2cB0NRESgaeg_RwBqQhT7';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlveWJ2anV0ZGZid2N5emttdnNtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzA0OTY2NiwiZXhwIjoyMDkyNjI1NjY2fQ.O8oUbYGzZ7noT0VD33sQYV9D8X2n_axh_K60321QsRE'; // 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
