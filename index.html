@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Календарь смен + управление сотрудниками</title>
+    <title>Календарь смен — мобильная версия</title>
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <style>
@@ -32,8 +32,8 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         .project-bar select {
-            flex: 3;
-            min-width: 150px;
+            flex: 2;
+            min-width: 130px;
             padding: 12px 16px;
             font-size: 1rem;
             border: 1px solid #cbd5e1;
@@ -65,6 +65,9 @@
         .project-bar button.employees {
             background-color: #8e44ad;
         }
+        .project-bar button.add-shift {
+            background-color: #e67e22;
+        }
         .project-bar button:hover {
             opacity: 0.85;
             transform: translateY(-1px);
@@ -82,7 +85,7 @@
             .fc .fc-toolbar-title { font-size: 1.2rem; }
             .fc .fc-button { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
         }
-        /* Модалки общие */
+        /* Модалки */
         .modal {
             display: none;
             position: fixed;
@@ -176,12 +179,8 @@
             padding: 4px 8px;
             border-radius: 20px;
         }
-        .edit-employee {
-            color: #2c7da0;
-        }
-        .delete-employee {
-            color: #c0392b;
-        }
+        .edit-employee { color: #2c7da0; }
+        .delete-employee { color: #c0392b; }
         .add-employee-form {
             display: flex;
             gap: 10px;
@@ -207,7 +206,8 @@
 <div class="app-container">
     <div class="project-bar">
         <select id="projectSelect"></select>
-        <button id="newProjectBtn">➕ Новый</button>
+        <button id="addShiftBtn" class="add-shift">➕ Смена</button>
+        <button id="newProjectBtn">➕ Проект</button>
         <button id="deleteProjectBtn" class="delete">🗑️ Удалить</button>
         <button id="employeesBtn" class="employees">👥 Сотрудники</button>
         <button id="exportBtn" class="export">📁 Экспорт</button>
@@ -258,9 +258,9 @@
     // --------------------------------------------------------------
     // 1. Глобальные данные
     // --------------------------------------------------------------
-    let projects = [];          // проекты
+    let projects = [];
     let activeProjectId = null;
-    let employees = [];         // { id, name }
+    let employees = [];
     
     const STORAGE_PROJECTS = 'shiftCalendarProjects';
     const STORAGE_EMPLOYEES = 'shiftCalendarEmployees';
@@ -274,7 +274,6 @@
     }
     
     function loadAll() {
-        // загрузка проектов
         const savedProjects = localStorage.getItem(STORAGE_PROJECTS);
         if (savedProjects) {
             try {
@@ -285,7 +284,6 @@
         } else {
             createDefaultProjects();
         }
-        // загрузка сотрудников
         const savedEmps = localStorage.getItem(STORAGE_EMPLOYEES);
         if (savedEmps) {
             try {
@@ -315,11 +313,11 @@
             shifts: [
                 {
                     id: 'shift1',
-                    title: 'Анна Козлова',
+                    title: employees.length ? employees[0].name : 'Анна Козлова',
                     start: tomorrow.toISOString(),
                     end: tomEnd.toISOString(),
                     backgroundColor: '#f9e79f',
-                    employee: 'Анна Козлова'
+                    employee: employees.length ? employees[0].name : 'Анна Козлова'
                 }
             ]
         }];
@@ -330,14 +328,11 @@
         employees = [
             { id: 'emp1', name: 'Анна Козлова' },
             { id: 'emp2', name: 'Борис Лебедев' },
-            { id: 'emp3', name: 'Виктор Смирнов' },
-            { id: 'emp4', name: 'Галина Петрова' },
-            { id: 'emp5', name: 'Дмитрий Орлов' }
+            { id: 'emp3', name: 'Виктор Смирнов' }
         ];
         saveAll();
     }
     
-    // цвет для сотрудника (генерируем стабильный)
     function getEmployeeColor(name) {
         const colors = ['#f9e79f', '#aed6f1', '#f5cba7', '#d5f5e3', '#fadbd8', '#e8daef', '#fdebd0', '#d4e6f1'];
         let hash = 0;
@@ -354,7 +349,6 @@
         if (calendar) {
             calendar.removeAllEvents();
             if (currentProject && currentProject.shifts) {
-                // обогатим события цветом (на случай, если цвет не сохранён)
                 const events = currentProject.shifts.map(s => ({
                     ...s,
                     backgroundColor: s.backgroundColor || getEmployeeColor(s.employee),
@@ -363,7 +357,6 @@
                 calendar.addEventSource(events);
             }
         }
-        // обновить select проектов
         const select = document.getElementById('projectSelect');
         select.innerHTML = '';
         projects.forEach(proj => {
@@ -375,7 +368,6 @@
         });
         select.disabled = false;
         document.getElementById('deleteProjectBtn').disabled = (projects.length <= 1);
-        // обновить список сотрудников в модалке смены
         updateEmployeeSelect();
     }
     
@@ -398,7 +390,7 @@
     }
     
     // --------------------------------------------------------------
-    // 4. Управление проектами
+    // 4. Проекты
     // --------------------------------------------------------------
     function createNewProject() {
         const name = prompt('Название нового проекта', 'Новая локация');
@@ -425,19 +417,21 @@
     }
     
     // --------------------------------------------------------------
-    // 5. Смены (модалка)
+    // 5. Смены (модалка с ручным выбором даты)
     // --------------------------------------------------------------
     const shiftModal = document.getElementById('shiftModal');
-    let selectedStart = null, selectedEnd = null;
     
-    function openShiftModal(start, end) {
-        selectedStart = new Date(start);
-        selectedEnd = new Date(end);
-        const formatLocal = (d) => {
-            return d.toISOString().slice(0,16);
-        };
-        document.getElementById('startInput').value = formatLocal(selectedStart);
-        document.getElementById('endInput').value = formatLocal(selectedEnd);
+    function openShiftModalWithDefaults() {
+        // Устанавливаем начало: сегодня в 10:00, конец сегодня в 12:00
+        const now = new Date();
+        const startDate = new Date(now);
+        startDate.setHours(10, 0, 0, 0);
+        const endDate = new Date(now);
+        endDate.setHours(12, 0, 0, 0);
+        
+        const formatLocal = (d) => d.toISOString().slice(0,16);
+        document.getElementById('startInput').value = formatLocal(startDate);
+        document.getElementById('endInput').value = formatLocal(endDate);
         shiftModal.style.display = 'flex';
     }
     
@@ -445,7 +439,7 @@
         shiftModal.style.display = 'none';
     }
     
-    function addShift() {
+    function addShiftFromModal() {
         const employeeName = document.getElementById('employeeSelect').value;
         const startVal = document.getElementById('startInput').value;
         const endVal = document.getElementById('endInput').value;
@@ -490,7 +484,7 @@
     }
     
     // --------------------------------------------------------------
-    // 6. Управление сотрудниками
+    // 6. Управление сотрудниками (без изменений)
     // --------------------------------------------------------------
     const employeesModal = document.getElementById('employeesModal');
     
@@ -514,15 +508,12 @@
             `;
             container.appendChild(div);
         });
-        // обработчики
         document.querySelectorAll('.edit-employee').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = btn.dataset.id;
                 const oldName = btn.dataset.name;
-                const newName = prompt('Введите новое имя сотрудника', oldName);
-                if (newName && newName.trim()) {
-                    editEmployee(id, newName.trim());
-                }
+                const newName = prompt('Новое имя сотрудника', oldName);
+                if (newName && newName.trim()) editEmployee(id, newName.trim());
             });
         });
         document.querySelectorAll('.delete-employee').forEach(btn => {
@@ -546,15 +537,15 @@
     function addEmployee(name) {
         if (!name.trim()) return;
         if (employees.some(e => e.name.toLowerCase() === name.trim().toLowerCase())) {
-            alert('Сотрудник с таким именем уже существует');
+            alert('Такой сотрудник уже есть');
             return;
         }
         const newId = 'emp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
         employees.push({ id: newId, name: name.trim() });
         saveAll();
         renderEmployeeList();
-        updateEmployeeSelect(); // обновляем select в сменах
-        refreshCalendar(); // перерисовка календаря (чтобы обновить цвета, если нужно)
+        updateEmployeeSelect();
+        refreshCalendar();
     }
     
     function editEmployee(id, newName) {
@@ -566,7 +557,6 @@
         }
         const oldName = emp.name;
         emp.name = newName;
-        // обновляем имя во всех сменах всех проектов
         for (let proj of projects) {
             for (let shift of proj.shifts) {
                 if (shift.employee === oldName) {
@@ -583,7 +573,6 @@
     }
     
     function deleteEmployeeWithConfirm(id, name) {
-        // проверить, есть ли смены с этим сотрудником
         let used = false;
         for (let proj of projects) {
             if (proj.shifts.some(s => s.employee === name)) {
@@ -593,7 +582,6 @@
         }
         if (used) {
             if (!confirm(`Сотрудник "${name}" используется в сменах. Удалить его и ВСЕ его смены?`)) return;
-            // удаляем все смены этого сотрудника
             for (let proj of projects) {
                 proj.shifts = proj.shifts.filter(s => s.employee !== name);
             }
@@ -608,7 +596,7 @@
     }
     
     // --------------------------------------------------------------
-    // 7. Экспорт/импорт
+    // 7. Экспорт/импорт (сохраняем и проекты, и сотрудников)
     // --------------------------------------------------------------
     function exportData() {
         const fullData = { projects, employees };
@@ -642,7 +630,7 @@
                     throw new Error();
                 }
             } catch(err) {
-                alert('Неверный файл. Используйте экспортированный файл.');
+                alert('Неверный файл. Используйте файл, созданный кнопкой "Экспорт"');
             }
         };
         reader.readAsText(file);
@@ -652,7 +640,6 @@
     // 8. Инициализация
     // --------------------------------------------------------------
     document.addEventListener('DOMContentLoaded', () => {
-        // календарь
         const calendarEl = document.getElementById('calendar');
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'timeGridWeek',
@@ -662,13 +649,23 @@
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
             locale: 'ru',
-            selectable: true,
+            selectable: true,          // оставляем возможность выделения (если работает)
             selectMirror: true,
-            select: (info) => openShiftModal(info.start, info.end),
+            select: (info) => {
+                // Если пользователь смог выделить пальцем — откроем модалку с этими датами
+                const start = info.start;
+                const end = info.end;
+                const formatLocal = (d) => d.toISOString().slice(0,16);
+                document.getElementById('startInput').value = formatLocal(start);
+                document.getElementById('endInput').value = formatLocal(end);
+                shiftModal.style.display = 'flex';
+            },
             eventClick: (info) => deleteShift(info.event.id),
             height: 'auto',
             weekends: true,
-            buttonText: { today: 'Сегодня', month: 'Месяц', week: 'Неделя', day: 'День' }
+            buttonText: { today: 'Сегодня', month: 'Месяц', week: 'Неделя', day: 'День' },
+            longPressDelay: 500,       // чтобы не конфликтовать с прокруткой
+            eventLongPressDelay: 500
         });
         calendar.render();
         
@@ -679,6 +676,7 @@
         // Обработчики
         document.getElementById('newProjectBtn').onclick = createNewProject;
         document.getElementById('deleteProjectBtn').onclick = deleteCurrentProject;
+        document.getElementById('addShiftBtn').onclick = openShiftModalWithDefaults;
         document.getElementById('exportBtn').onclick = exportData;
         document.getElementById('employeesBtn').onclick = () => {
             renderEmployeeList();
@@ -693,13 +691,13 @@
             }
         };
         document.getElementById('closeModalBtn').onclick = closeShiftModal;
-        document.getElementById('saveShiftBtn').onclick = addShift;
+        document.getElementById('saveShiftBtn').onclick = addShiftFromModal;
         document.getElementById('projectSelect').onchange = (e) => {
             activeProjectId = e.target.value;
             refreshCalendar();
         };
         
-        // импорт
+        // Импорт через скрытый input
         const importInput = document.createElement('input');
         importInput.type = 'file';
         importInput.accept = 'application/json';
@@ -711,7 +709,7 @@
         };
         document.getElementById('importBtn').onclick = () => importInput.click();
         
-        // закрытие модалок по клику вне
+        // Закрытие модалок по клику вне
         window.onclick = (e) => {
             if (e.target === shiftModal) closeShiftModal();
             if (e.target === employeesModal) employeesModal.style.display = 'none';
