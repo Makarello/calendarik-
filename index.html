@@ -7,19 +7,14 @@
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             padding: 16px;
             background: #e2e8f0;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-        .app-container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+        .app-container { max-width: 1400px; margin: 0 auto; }
         .project-bar {
             background: white;
             border-radius: 32px;
@@ -53,25 +48,12 @@
             background-color: #2c7da0;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .project-bar button.delete {
-            background-color: #c0392b;
-        }
-        .project-bar button.export {
-            background-color: #27ae60;
-        }
-        .project-bar button.import {
-            background-color: #f39c12;
-        }
-        .project-bar button.employees {
-            background-color: #8e44ad;
-        }
-        .project-bar button.add-shift {
-            background-color: #e67e22;
-        }
-        .project-bar button:hover {
-            opacity: 0.85;
-            transform: translateY(-1px);
-        }
+        .project-bar button.delete { background-color: #c0392b; }
+        .project-bar button.export { background-color: #27ae60; }
+        .project-bar button.import { background-color: #f39c12; }
+        .project-bar button.employees { background-color: #8e44ad; }
+        .project-bar button.add-shift { background-color: #e67e22; }
+        .project-bar button:hover { opacity: 0.85; transform: translateY(-1px); }
         #calendar {
             background: white;
             border-radius: 32px;
@@ -85,7 +67,6 @@
             .fc .fc-toolbar-title { font-size: 1.2rem; }
             .fc .fc-button { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
         }
-        /* Модалки */
         .modal {
             display: none;
             position: fixed;
@@ -106,20 +87,9 @@
             padding: 24px;
             box-shadow: 0 20px 35px rgba(0,0,0,0.2);
         }
-        .modal-card h3 {
-            margin: 0 0 16px 0;
-            font-size: 1.6rem;
-            font-weight: 600;
-        }
-        .form-group {
-            margin-bottom: 18px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            color: #1e293b;
-        }
+        .modal-card h3 { margin: 0 0 16px 0; font-size: 1.6rem; font-weight: 600; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #1e293b; }
         .form-group input, .form-group select {
             width: 100%;
             padding: 12px 14px;
@@ -127,79 +97,19 @@
             border-radius: 60px;
             font-size: 1rem;
         }
-        .buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            margin-top: 20px;
-        }
-        .btn-save {
-            background: #2c7da0;
-            color: white;
-            border: none;
-            padding: 10px 22px;
-            border-radius: 40px;
-            font-weight: bold;
-        }
-        .btn-cancel {
-            background: #94a3b8;
-            color: white;
-            border: none;
-            padding: 10px 22px;
-            border-radius: 40px;
-        }
-        .employee-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            border: 1px solid #e2e8f0;
-            border-radius: 24px;
-            padding: 8px;
-        }
-        .employee-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .employee-item:last-child {
-            border-bottom: none;
-        }
-        .employee-name {
-            font-weight: 500;
-            flex: 1;
-        }
-        .employee-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2rem;
-            margin-left: 12px;
-            padding: 4px 8px;
-            border-radius: 20px;
-        }
+        .buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+        .btn-save { background: #2c7da0; color: white; border: none; padding: 10px 22px; border-radius: 40px; font-weight: bold; }
+        .btn-cancel { background: #94a3b8; color: white; border: none; padding: 10px 22px; border-radius: 40px; }
+        .employee-list { max-height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 24px; padding: 8px; }
+        .employee-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+        .employee-item:last-child { border-bottom: none; }
+        .employee-name { font-weight: 500; flex: 1; }
+        .employee-actions button { background: none; border: none; cursor: pointer; font-size: 1.2rem; margin-left: 12px; padding: 4px 8px; border-radius: 20px; }
         .edit-employee { color: #2c7da0; }
         .delete-employee { color: #c0392b; }
-        .add-employee-form {
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-        }
-        .add-employee-form input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 60px;
-            border: 1px solid #cbd5e1;
-        }
-        .add-employee-form button {
-            background: #2c7da0;
-            border: none;
-            color: white;
-            border-radius: 40px;
-            padding: 0 20px;
-            cursor: pointer;
-        }
+        .add-employee-form { display: flex; gap: 10px; margin-top: 16px; }
+        .add-employee-form input { flex: 1; padding: 10px; border-radius: 60px; border: 1px solid #cbd5e1; }
+        .add-employee-form button { background: #2c7da0; border: none; color: white; border-radius: 40px; padding: 0 20px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -255,24 +165,20 @@
 </div>
 
 <script>
-    // --------------------------------------------------------------
-    // 1. Глобальные данные
-    // --------------------------------------------------------------
+    // Глобальные данные
     let projects = [];
     let activeProjectId = null;
     let employees = [];
-    
     const STORAGE_PROJECTS = 'shiftCalendarProjects';
     const STORAGE_EMPLOYEES = 'shiftCalendarEmployees';
     
-    // --------------------------------------------------------------
-    // 2. Загрузка / сохранение
-    // --------------------------------------------------------------
+    // Сохранение
     function saveAll() {
         localStorage.setItem(STORAGE_PROJECTS, JSON.stringify(projects));
         localStorage.setItem(STORAGE_EMPLOYEES, JSON.stringify(employees));
     }
     
+    // Загрузка
     function loadAll() {
         const savedProjects = localStorage.getItem(STORAGE_PROJECTS);
         if (savedProjects) {
@@ -306,20 +212,17 @@
         tomorrow.setHours(9,0,0,0);
         const tomEnd = new Date(tomorrow);
         tomEnd.setHours(17,0,0,0);
-        
         projects = [{
             id: 'default_' + Date.now(),
             name: 'Основной проект',
-            shifts: [
-                {
-                    id: 'shift1',
-                    title: employees.length ? employees[0].name : 'Анна Козлова',
-                    start: tomorrow.toISOString(),
-                    end: tomEnd.toISOString(),
-                    backgroundColor: '#f9e79f',
-                    employee: employees.length ? employees[0].name : 'Анна Козлова'
-                }
-            ]
+            shifts: [{
+                id: 'shift1',
+                title: employees.length ? employees[0].name : 'Анна Козлова',
+                start: tomorrow.toISOString(),
+                end: tomEnd.toISOString(),
+                backgroundColor: '#f9e79f',
+                employee: employees.length ? employees[0].name : 'Анна Козлова'
+            }]
         }];
         saveAll();
     }
@@ -340,9 +243,6 @@
         return colors[hash % colors.length];
     }
     
-    // --------------------------------------------------------------
-    // 3. Календарь и отрисовка
-    // --------------------------------------------------------------
     let calendar;
     function refreshCalendar() {
         const currentProject = projects.find(p => p.id === activeProjectId);
@@ -389,9 +289,7 @@
         }
     }
     
-    // --------------------------------------------------------------
-    // 4. Проекты
-    // --------------------------------------------------------------
+    // Проекты
     function createNewProject() {
         const name = prompt('Название нового проекта', 'Новая локация');
         if (!name) return;
@@ -403,10 +301,7 @@
     }
     
     function deleteCurrentProject() {
-        if (projects.length <= 1) {
-            alert('Нельзя удалить последний проект');
-            return;
-        }
+        if (projects.length <= 1) { alert('Нельзя удалить последний проект'); return; }
         const idx = projects.findIndex(p => p.id === activeProjectId);
         if (idx !== -1) {
             projects.splice(idx, 1);
@@ -416,23 +311,34 @@
         }
     }
     
-    // --------------------------------------------------------------
-    // 5. Смены (модалка с ручным выбором даты)
-    // --------------------------------------------------------------
+    // Модалка смены
     const shiftModal = document.getElementById('shiftModal');
     
-    function openShiftModalWithDefaults() {
-        // Устанавливаем начало: сегодня в 10:00, конец сегодня в 12:00
-        const now = new Date();
-        const startDate = new Date(now);
-        startDate.setHours(10, 0, 0, 0);
-        const endDate = new Date(now);
-        endDate.setHours(12, 0, 0, 0);
-        
+    // Универсальная функция открытия модалки с заданными датами (startDate, endDate)
+    function openShiftModalWithDates(startDate, endDate) {
         const formatLocal = (d) => d.toISOString().slice(0,16);
         document.getElementById('startInput').value = formatLocal(startDate);
         document.getElementById('endInput').value = formatLocal(endDate);
         shiftModal.style.display = 'flex';
+    }
+    
+    // Для кнопки "➕ Смена" : сегодня 9:00 – 21:00
+    function openShiftModalForToday() {
+        const now = new Date();
+        const startDate = new Date(now);
+        startDate.setHours(9, 0, 0, 0);
+        const endDate = new Date(now);
+        endDate.setHours(21, 0, 0, 0);
+        openShiftModalWithDates(startDate, endDate);
+    }
+    
+    // Для клика по дню (dateClick) : установить 9:00 – 21:00 этого дня
+    function handleDateClick(date) {
+        const startDate = new Date(date);
+        startDate.setHours(9, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setHours(21, 0, 0, 0);
+        openShiftModalWithDates(startDate, endDate);
     }
     
     function closeShiftModal() {
@@ -483,9 +389,7 @@
         }
     }
     
-    // --------------------------------------------------------------
-    // 6. Управление сотрудниками (без изменений)
-    // --------------------------------------------------------------
+    // Управление сотрудниками
     const employeesModal = document.getElementById('employeesModal');
     
     function renderEmployeeList() {
@@ -595,9 +499,7 @@
         refreshCalendar();
     }
     
-    // --------------------------------------------------------------
-    // 7. Экспорт/импорт (сохраняем и проекты, и сотрудников)
-    // --------------------------------------------------------------
+    // Экспорт/импорт
     function exportData() {
         const fullData = { projects, employees };
         const dataStr = JSON.stringify(fullData, null, 2);
@@ -636,9 +538,7 @@
         reader.readAsText(file);
     }
     
-    // --------------------------------------------------------------
-    // 8. Инициализация
-    // --------------------------------------------------------------
+    // Инициализация
     document.addEventListener('DOMContentLoaded', () => {
         const calendarEl = document.getElementById('calendar');
         calendar = new FullCalendar.Calendar(calendarEl, {
@@ -649,22 +549,21 @@
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
             locale: 'ru',
-            selectable: true,          // оставляем возможность выделения (если работает)
+            selectable: true,
             selectMirror: true,
+            // Обработчик выделения интервала (drag) - для ручного выбора диапазона
             select: (info) => {
-                // Если пользователь смог выделить пальцем — откроем модалку с этими датами
-                const start = info.start;
-                const end = info.end;
-                const formatLocal = (d) => d.toISOString().slice(0,16);
-                document.getElementById('startInput').value = formatLocal(start);
-                document.getElementById('endInput').value = formatLocal(end);
-                shiftModal.style.display = 'flex';
+                openShiftModalWithDates(info.start, info.end);
+            },
+            // Обработчик клика по дню (работает в любом виде, включая month)
+            dateClick: (info) => {
+                handleDateClick(info.date);
             },
             eventClick: (info) => deleteShift(info.event.id),
             height: 'auto',
             weekends: true,
             buttonText: { today: 'Сегодня', month: 'Месяц', week: 'Неделя', day: 'День' },
-            longPressDelay: 500,       // чтобы не конфликтовать с прокруткой
+            longPressDelay: 500,
             eventLongPressDelay: 500
         });
         calendar.render();
@@ -673,10 +572,9 @@
         refreshCalendar();
         renderEmployeeList();
         
-        // Обработчики
         document.getElementById('newProjectBtn').onclick = createNewProject;
         document.getElementById('deleteProjectBtn').onclick = deleteCurrentProject;
-        document.getElementById('addShiftBtn').onclick = openShiftModalWithDefaults;
+        document.getElementById('addShiftBtn').onclick = openShiftModalForToday;
         document.getElementById('exportBtn').onclick = exportData;
         document.getElementById('employeesBtn').onclick = () => {
             renderEmployeeList();
@@ -697,7 +595,6 @@
             refreshCalendar();
         };
         
-        // Импорт через скрытый input
         const importInput = document.createElement('input');
         importInput.type = 'file';
         importInput.accept = 'application/json';
@@ -709,7 +606,6 @@
         };
         document.getElementById('importBtn').onclick = () => importInput.click();
         
-        // Закрытие модалок по клику вне
         window.onclick = (e) => {
             if (e.target === shiftModal) closeShiftModal();
             if (e.target === employeesModal) employeesModal.style.display = 'none';
